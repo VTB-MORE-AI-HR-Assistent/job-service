@@ -1,0 +1,38 @@
+# Gradle
+.gradle
+build
+bin
+!gradle
+!gradlew
+!build.gradle.kts
+!settings.gradle.kts
+!gradle.properties
+
+# IDE
+.idea
+*.iml
+*.ipr
+*.iws
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Temp files
+*.tmp
+*.temp
+
+# Application
+app.jar

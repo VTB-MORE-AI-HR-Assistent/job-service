@@ -30,6 +30,16 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("jakarta.validation:jakarta.validation-api:3.1.1")
 	implementation("org.modelmapper:modelmapper:3.2.3")
+	// Spring AI
+	implementation("org.springframework.ai:spring-ai-client-chat:1.0.1")
+	implementation("org.springframework.ai:spring-ai-openai")
+	// PDF обработка
+	implementation("org.apache.pdfbox:pdfbox:3.0.1")
+	implementation("org.apache.tika:tika-core:2.9.1")
+	// Для работы с файлами
+	implementation("org.springframework.boot:spring-boot-starter-web")
+	// Кэширование
+	implementation("org.springframework.boot:spring-boot-starter-cache")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

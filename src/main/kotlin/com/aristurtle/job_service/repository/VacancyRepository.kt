@@ -10,15 +10,17 @@ import org.springframework.stereotype.Repository
 @Repository
 interface VacancyRepository : JpaRepository<Vacancy, Int>, JpaSpecificationExecutor<Vacancy> {
 
-    @Query("""
-        SELECT v FROM Vacancy v 
-        WHERE (:title IS NULL OR LOWER(v.title) LIKE LOWER(CONCAT('%', :title, '%')))
-        AND (:company IS NULL OR LOWER(v.company) LIKE LOWER(CONCAT('%', :company, '%')))
-        AND (:location IS NULL OR LOWER(v.location) LIKE LOWER(CONCAT('%', :location, '%')))
-        AND (:isRemote IS NULL OR v.isRemote = :isRemote)
-        AND v.status = 'active'
-        ORDER BY v.createdAt DESC
-    """)
+    @Query(
+        """
+    SELECT * FROM jobs.vacancies v 
+    WHERE (:title IS NULL OR LOWER(v.title) LIKE LOWER('%' || :title || '%')) 
+    AND (:company IS NULL OR LOWER(v.company) LIKE LOWER('%' || :company || '%')) 
+    AND (:location IS NULL OR LOWER(v.location) LIKE LOWER('%' || :location || '%')) 
+    AND (:isRemote IS NULL OR v.is_remote = :isRemote) 
+    AND v.status = 'active' 
+    ORDER BY v.created_at DESC
+""", nativeQuery = true
+    )
     fun findByFilters(
         @Param("title") title: String?,
         @Param("company") company: String?,

@@ -2,10 +2,10 @@ package com.aristurtle.job_service.service.impl
 
 import com.aristurtle.job_service.dto.VacancyRequest
 import com.aristurtle.job_service.exception.VacancyNotFoundException
+import com.aristurtle.job_service.mapper.VacancyMapper
 import com.aristurtle.job_service.model.Vacancy
 import com.aristurtle.job_service.repository.VacancyRepository
 import com.aristurtle.job_service.service.VacancyService
-import org.modelmapper.ModelMapper
 import org.springframework.stereotype.Service
 
 @Service
@@ -28,7 +28,7 @@ class VacancyServiceImpl(
     
     override fun updateVacancy(id: Int, request: VacancyRequest): Vacancy {
         val existingVacancy = getVacancyById(id)
-        val updatedVacancy = modelMapper.map(existingVacancy, (Vacancy::class as Vacancy).javaClass)
+        val updatedVacancy = VacancyMapper.updateEntityFromRequest(existingVacancy, request)
         return vacancyRepository.save(updatedVacancy)
     }
     
@@ -45,9 +45,5 @@ class VacancyServiceImpl(
         isRemote: Boolean?
     ): List<Vacancy> {
         return vacancyRepository.findByFilters(title, company, location, isRemote)
-    }
-
-    companion object {
-        private val modelMapper = ModelMapper()
     }
 }
