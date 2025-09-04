@@ -1,194 +1,208 @@
 package com.aristurtle.job_service.controller
 
 import com.aristurtle.job_service.dto.VacancyRequest
-import com.aristurtle.job_service.dto.VacancyResponse
-import com.aristurtle.job_service.dto.VacancyShortResponse
-import com.aristurtle.job_service.mapper.VacancyMapper
+import com.aristurtle.job_service.model.Vacancy
 import com.aristurtle.job_service.service.VacancyService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
-import io.swagger.v3.oas.annotations.media.ExampleObject
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.validation.Valid
+import org.modelmapper.ModelMapper
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/v1/vacancies")
+@RequestMapping("/api/vacancies")
 @Tag(name = "Vacancies", description = "API для управления вакансиями")
 class VacancyController(
     private val vacancyService: VacancyService
 ) {
+    companion object {
+        private val modelMapper = ModelMapper()
+    }
 
-    @GetMapping
     @Operation(
         summary = "Получить все вакансии",
-        description = "Возвращает список всех вакансий в кратком формате"
+        description = "Возвращает список вакансий с возможностью пагинации"
     )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Список вакансий получен успешно",
-        content = [Content(mediaType = "application/json")]
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Успешное получение списка вакансий"),
+            ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+        ]
     )
-    fun getAllVacancies(): List<VacancyShortResponse> {
-        return vacancyService.getAllVacancies().map { VacancyMapper.toShortResponse(it) }
+    @GetMapping
+    fun getAllVacancies(
+        @Parameter(name = "pageNumber", description = "Параметр пагинации: номер начальной страницы", required = false)
+        @RequestParam("pageNumber", required = false) pageNumber: Int?,
+
+        @Parameter(name = "pageSize", description = "Параметр пагинации: объем возвращаемых страниц", required = false)
+        @RequestParam("pageSize", required = false) pageSize: Int?,
+    ): ResponseEntity<List<Vacancy>> {
+        return if (pageNumber != null && pageSize != null)
+            vacancyService.getAll(PageRequest.of(pageNumber!!, pageSize!!))
+                .toList()
+                .let { ResponseEntity.ok(it) }
+        else
+            vacancyService.getAll().let { ResponseEntity.ok(it) }
     }
 
-    @GetMapping("/{id}")
     @Operation(
         summary = "Получить вакансию по ID",
-        description = "Возвращает полную информацию о вакансии по её идентификатору"
+        description = "Возвращает вакансию по указанному идентификатору"
     )
-    @ApiResponses(value = [
-        ApiResponse(
-            responseCode = "200",
-            description = "Вакансия найдена",
-            content = [Content(mediaType = "application/json")]
-        ),
-        ApiResponse(
-            responseCode = "404",
-            description = "Вакансия не найдена",
-            content = [Content(mediaType = "application/json")]
-        )
-    ])
-    fun getVacancyById(@PathVariable id: Int): VacancyResponse {
-        return VacancyMapper.toResponse(vacancyService.getVacancyById(id))
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Вакансия найдена"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @GetMapping("/{id}")
+    fun getVacancyById(
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long
+    ): ResponseEntity<Vacancy> {
+        return vacancyService.getVacancyById(id)
+            .map { ResponseEntity.ok(it) }
+            .orElse(ResponseEntity.notFound().build())
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     @Operation(
         summary = "Создать новую вакансию",
-        description = "Создает новую вакансию с указанными данными"
+        description = "Создает новую вакансию и возвращает созданный объект"
     )
-    @ApiResponses(value = [
-        ApiResponse(
-            responseCode = "201",
-            description = "Вакансия успешно создана",
-            content = [Content(mediaType = "application/json")]
-        ),
-        ApiResponse(
-            responseCode = "400",
-            description = "Неверные данные запроса",
-            content = [Content(mediaType = "application/json")]
-        )
-    ])
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Вакансия успешно создана",
+                content = [Content(schema = Schema(implementation = Vacancy::class))]
+            ),
+            ApiResponse(responseCode = "400", description = "Неверные данные вакансии")
+        ]
+    )
+    @PostMapping
     fun createVacancy(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Данные для создания вакансии",
+            description = "Данные вакансии",
             required = true,
-            content = [Content(
-                mediaType = "application/json",
-                examples = [ExampleObject(
-                    name = "Пример запроса",
-                    value = """
-                    {
-                      "title": "Java-разработчик",
-                      "company": "TechCorp",
-                      "description": "Разработка backend на Java",
-                      "salary_from": 150000,
-                      "salary_to": 250000,
-                      "salary_currency": "RUB",
-                      "is_remote": true
-                    }
-                    """
-                )]
-            )]
+            content = [Content(schema = Schema(implementation = VacancyRequest::class))]
         )
-        @Valid @RequestBody request: VacancyRequest
-    ): VacancyResponse {
-        val vacancy = VacancyMapper.toEntity(request)
-        val savedVacancy = vacancyService.createVacancy(vacancy)
-        return VacancyMapper.toResponse(savedVacancy)
+        @RequestBody vacancyRequest: VacancyRequest
+    ): ResponseEntity<Vacancy> {
+        val createdVacancy = vacancyService.createVacancy(
+            modelMapper.map<Vacancy>(vacancyRequest, Vacancy::class.java)
+        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdVacancy)
     }
 
-    @PutMapping("/{id}")
     @Operation(
         summary = "Обновить вакансию",
-        description = "Обновляет данные существующей вакансии"
+        description = "Обновляет данные вакансии по указанному ID"
     )
-    @ApiResponses(value = [
-        ApiResponse(
-            responseCode = "200",
-            description = "Вакансия успешно обновлена",
-            content = [Content(mediaType = "application/json")]
-        ),
-        ApiResponse(
-            responseCode = "404",
-            description = "Вакансия не найдена",
-            content = [Content(mediaType = "application/json")]
-        ),
-        ApiResponse(
-            responseCode = "400",
-            description = "Неверные данные запроса",
-            content = [Content(mediaType = "application/json")]
-        )
-    ])
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Вакансия успешно обновлена"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @PutMapping("/{id}")
     fun updateVacancy(
-        @Parameter(description = "ID вакансии для обновления", example = "1", required = true)
-        @PathVariable id: Int,
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long,
 
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Новые данные вакансии",
-            required = true
+            description = "Обновленные данные вакансии",
+            required = true,
+            content = [Content(schema = Schema(implementation = VacancyRequest::class))]
         )
-        @Valid @RequestBody request: VacancyRequest
-    ): VacancyResponse {
-        val updatedVacancy = vacancyService.updateVacancy(id, request)
-        return VacancyMapper.toResponse(updatedVacancy)
+        @RequestBody vacancyRequest: VacancyRequest
+    ): ResponseEntity<Vacancy> {
+        return try {
+            val updatedVacancy = vacancyService.updateVacancy(
+                id = id,
+                vacancy = modelMapper.map<Vacancy>(vacancyRequest, Vacancy::class.java)
+            )
+            ResponseEntity.ok(updatedVacancy)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.notFound().build()
+        }
     }
 
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
         summary = "Удалить вакансию",
-        description = "Удаляет вакансию по её идентификатору"
+        description = "Удаляет вакансию по указанному ID"
     )
-    @ApiResponses(value = [
-        ApiResponse(
-            responseCode = "204",
-            description = "Вакансия успешно удалена"
-        ),
-        ApiResponse(
-            responseCode = "404",
-            description = "Вакансия не найдена",
-            content = [Content(mediaType = "application/json")]
-        )
-    ])
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "Вакансия успешно удалена"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @DeleteMapping("/{id}")
     fun deleteVacancy(
-        @Parameter(description = "ID вакансии для удаления", example = "1", required = true)
-        @PathVariable id: Int
-    ) {
-        vacancyService.deleteVacancy(id)
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long
+    ): ResponseEntity<Void> {
+        return if (vacancyService.deleteVacancy(id)) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
     }
 
-    @GetMapping("/search")
+//    @Operation(
+//        summary = "Поиск вакансий",
+//        description = "Расширенный поиск вакансий по различным критериям"
+//    )
+//    @ApiResponse(responseCode = "200", description = "Успешный поиск")
+//    @PostMapping("/search")
+//    fun searchVacancies(
+//        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//            description = "Поисковый запрос",
+//            required = true,
+//            content = [Content(schema = Schema(implementation = VacancyRequest::class))]
+//        )
+//        @RequestBody vacancyRequest: VacancyRequest,
+//
+//        @Parameter(name = "pageNumber", description = "Параметр пагинации: номер начальной страницы", required = false)
+//        @RequestParam("pageNumber", required = false) pageNumber: Int?,
+//
+//        @Parameter(name = "pageSize", description = "Параметр пагинации: объем возвращаемых страниц", required = false)
+//        @RequestParam("pageSize", required = false) pageSize: Int?,
+//    ): ResponseEntity<List<Vacancy>> {
+//        val vacancies =
+//            if (pageNumber != null && pageSize != null)
+//                vacancyService.searchVacancies(vacancyRequest, PageRequest.of(pageNumber, pageSize))
+//            else
+//                vacancyService.searchVacancies(vacancyRequest)
+//        return ResponseEntity.ok(vacancies)
+//    }
+
     @Operation(
-        summary = "Поиск вакансий",
-        description = "Поиск вакансий по различным критериям фильтрации"
+        summary = "Статистика по статусам",
+        description = "Возвращает количество вакансий по каждому статусу"
     )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Результаты поиска",
-        content = [Content(mediaType = "application/json")]
+    @ApiResponse(responseCode = "200", description = "Успешное получение статистики")
+    @GetMapping("/stats/count-by-status")
+    fun getCountByStatus(): ResponseEntity<Map<String, Long>> {
+        val stats = vacancyService.getCountByStatus()
+        return ResponseEntity.ok(stats)
+    }
+
+    @Operation(
+        summary = "Статистика по регионам",
+        description = "Возвращает количество вакансий по каждому региону"
     )
-    fun searchVacancies(
-        @Parameter(description = "Название вакансии (поиск по подстроке)", example = "Java")
-        @RequestParam(required = false) title: String?,
-
-        @Parameter(description = "Название компании (поиск по подстроке)", example = "Tech")
-        @RequestParam(required = false) company: String?,
-
-        @Parameter(description = "Местоположение (поиск по подстроке)", example = "Москва")
-        @RequestParam(required = false) location: String?,
-
-        @Parameter(description = "Удаленная работа", example = "true")
-        @RequestParam(required = false) isRemote: Boolean?,
-    ): List<VacancyShortResponse> {
-        val vacancies = vacancyService.searchVacancies(title, company, location, isRemote)
-        return vacancies.map { VacancyMapper.toShortResponse(it) }
+    @ApiResponse(responseCode = "200", description = "Успешное получение статистики")
+    @GetMapping("/stats/count-by-region")
+    fun getCountByRegion(): ResponseEntity<Map<String, Long>> {
+        val stats = vacancyService.getCountByRegion()
+        return ResponseEntity.ok(stats)
     }
 }

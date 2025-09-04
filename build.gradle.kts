@@ -21,38 +21,15 @@ repositories {
 }
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
-	implementation("org.springdoc:springdoc-openapi-starter-common:2.2.0")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
-	implementation("jakarta.validation:jakarta.validation-api:3.1.1")
-	implementation("org.modelmapper:modelmapper:3.2.3")
-	// Spring AI
-	implementation("org.springframework.ai:spring-ai-client-chat:1.0.1")
-	implementation("org.springframework.ai:spring-ai-openai")
-	// PDF обработка
-	implementation("org.apache.pdfbox:pdfbox:3.0.1")
-	implementation("org.apache.tika:tika-core:2.9.1")
-	// Для работы с файлами
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	// Кэширование
-	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	// Для Spring Boot 6.2.10 используйте SpringDoc 2.2.0
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
 	runtimeOnly("org.postgresql:postgresql")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+	implementation("org.modelmapper:modelmapper:3.2.4")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-	testImplementation("org.junit.jupiter:junit-jupiter-api")
-	testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	testImplementation("org.hibernate.validator:hibernate-validator")
-	testImplementation("org.glassfish:jakarta.el:4.0.2") // для валидации в тестах
-	testImplementation("org.springframework.boot:spring-boot-starter-test") {
-		exclude(group = "org.mockito", module = "mockito-core")
-	}
-	testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-	testImplementation("com.ninja-squad:springmockk:4.0.2") // Альтернатива Mockito для Kotlin
 }
 
 kotlin {

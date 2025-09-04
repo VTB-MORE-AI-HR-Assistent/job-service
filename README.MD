@@ -94,46 +94,6 @@ GET /api/v1/vacancies/search?title=Java&isRemote=true
 - **OpenAPI JSON:** http://localhost:8585/api-docs
 - **OpenAPI YAML:** http://localhost:8585/api-docs.yaml
 
-### Модели данных
-
-#### VacancyRequest
-```json
-{
-  "title": "Java Developer",
-  "company": "TechCorp",
-  "description": "Разработка backend на Java",
-  "requirements": "Опыт работы с Spring Boot",
-  "contacts": "hr@techcorp.com",
-  "salary_from": 150000,
-  "salary_to": 250000,
-  "salary_currency": "RUB",
-  "salary_gross": true,
-  "experience": "от 3 лет",
-  "employment_type": "полная",
-  "work_schedule": "удаленная работа",
-  "location": "Москва",
-  "is_remote": true,
-  "status": "active"
-}
-```
-
-#### VacancyResponse
-```json
-{
-  "id": 1,
-  "title": "Java Developer",
-  "company": "TechCorp",
-  "description": "Разработка backend на Java",
-  "salary_from": 150000,
-  "salary_to": 250000,
-  "salary_currency": "RUB",
-  "is_remote": true,
-  "status": "active",
-  "created_at": "2024-01-15T10:30:00",
-  "updated_at": "2024-01-15T10:30:00"
-}
-```
-
 ## 🧪 Тестирование
 
 ### Запуск тестов
@@ -186,63 +146,38 @@ docker-compose up -d
 
 ## 📊 База данных
 
-### Структура таблицы
+### Структура таблиц
+*Общее*
+```sql
+CREATE SCHEMA IF NOT EXISTS jobs;
+```
 
+*Vacancies*
 ```sql
 CREATE TABLE jobs.vacancies (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    company VARCHAR(255) NOT NULL,
-    description TEXT,
-    requirements TEXT,
-    contacts TEXT,
-    salary_from INTEGER,
-    salary_to INTEGER,
-    salary_currency VARCHAR(10),
-    salary_gross BOOLEAN,
-    experience VARCHAR(50),
-    employment_type VARCHAR(50),
-    work_schedule VARCHAR(50),
-    location VARCHAR(255),
-    is_remote BOOLEAN DEFAULT FALSE,
-    status VARCHAR(50) default 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    status VARCHAR(50),
+    region VARCHAR(100),
+    city VARCHAR(100),
+    address VARCHAR(255),
+    work_type VARCHAR(100),
+    employment_type VARCHAR(100),
+    income INTEGER,
+    salary_max INTEGER,
+    salary_min INTEGER,
+    work_schedule VARCHAR(100),
+    annual_bonus INTEGER,
+    bonus_type VARCHAR(50),
+    responsibilities TEXT[],
+    requirements TEXT[],
+    education_type VARCHAR(100),
+    experience_from INTEGER,
+    experience_to INTEGER,
+    knowledge_languages VARCHAR(50)[],
+    level_languages VARCHAR(50)[],
+    business_trips BOOLEAN,
+    additional_info TEXT,
+    program_requirements TEXT[],
+    creation_dts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ```
-
-## 🔒 Валидация
-
-API включает комплексную валидацию:
-
-- Обязательные поля: `title`, `company`
-- Валидация зарплаты: `salary_from` ≤ `salary_to`
-- Ограничение длины строковых полей
-
-## 🤝 Разработка
-
-### Структура проекта
-
-```
-src/
-├── main/
-│   ├── kotlin/com/example/vacancies/
-│   │   ├── controller/    # REST контроллеры
-│   │   ├── service/       # Бизнес-логика
-│   │   ├── repository/    # Доступ к данным
-│   │   ├── model/         # Модели данных
-│   │   ├── dto/          # Data Transfer Objects
-│   │   └── config/       # Конфигурация
-│   └── resources/
-│       └── application.yml
-└── test/                 # Тесты
-```
-
-### Коммиты
-
-Используйте Conventional Commits:
-- `feat:` Новая функциональность
-- `fix:` Исправление ошибок
-- `docs:` Изменения в документации
-- `test:` Добавление тестов
-- `refactor:` Рефакторинг кода

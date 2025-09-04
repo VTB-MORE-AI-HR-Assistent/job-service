@@ -1,0 +1,2768 @@
+openapi: 3.0.3
+info:
+  title: VTB AI HR Assistant API
+  description: Backend API for AI-powered HR interview automation platform
+  version: 1.0.0
+  contact:
+    name: VTB AI HR Team
+    email: support@vtbaihr.com
+  license:
+    name: Proprietary
+    url: https://vtbaihr.com/license
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api-staging.vtbaihr.com/api/v1
+    description: Staging server
+  - url: https://api.vtbaihr.com/api/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Users
+    description: User profile management
+  - name: Vacancies
+    description: Job vacancy management
+  - name: Candidates
+    description: Candidate management
+  - name: Interviews
+    description: Interview session management
+  - name: Daily.co
+    description: Daily.co video room integration
+  - name: Resumes
+    description: Resume processing and analysis
+  - name: Questions
+    description: Interview question bank management
+  - name: Analytics
+    description: Analytics and reporting
+  - name: Notifications
+    description: Email and SMS notifications
+
+paths:
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout and invalidate refresh token
+      operationId: logoutUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Logged out successfully
+
+  /auth/validate:
+    get:
+      tags: [Authentication]
+      summary: Validate current token
+      operationId: validateToken
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenValidationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/reset-password-request:
+    post:
+      tags: [Authentication]
+      summary: Request password reset
+      operationId: requestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password with token
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+      responses:
+        '204':
+          description: Password reset successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # User Management
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    put:
+      tags: [Users]
+      summary: Update user profile
+      operationId: updateUserProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /users/me/change-password:
+    post:
+      tags: [Users]
+      summary: Change password
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Vacancy Management
+  /vacancies:
+    get:
+      tags: [Vacancies]
+      summary: List vacancies
+      operationId: listVacancies
+      parameters:
+        - $ref: '#/components/parameters/statusParam'
+        - $ref: '#/components/parameters/departmentParam'
+        - $ref: '#/components/parameters/locationParam'
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        '200':
+          description: List of vacancies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyPage'
+    
+    post:
+      tags: [Vacancies]
+      summary: Create vacancy
+      operationId: createVacancy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVacancyRequest'
+      responses:
+        '201':
+          description: Vacancy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /vacancies/{id}:
+    get:
+      tags: [Vacancies]
+      summary: Get vacancy by ID
+      operationId: getVacancy
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Vacancy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags: [Vacancies]
+      summary: Update vacancy
+      operationId: updateVacancy
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVacancyRequest'
+      responses:
+        '200':
+          description: Vacancy updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      tags: [Vacancies]
+      summary: Delete vacancy
+      operationId: deleteVacancy
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '204':
+          description: Vacancy deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /vacancies/{id}/publish:
+    post:
+      tags: [Vacancies]
+      summary: Publish vacancy
+      operationId: publishVacancy
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Vacancy published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+
+  /vacancies/{id}/archive:
+    post:
+      tags: [Vacancies]
+      summary: Archive vacancy
+      operationId: archiveVacancy
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Vacancy archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+
+  # Candidate Management
+  /candidates:
+    get:
+      tags: [Candidates]
+      summary: List candidates
+      operationId: listCandidates
+      parameters:
+        - name: vacancyId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CandidateStatus'
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidatePage'
+    
+    post:
+      tags: [Candidates]
+      summary: Create candidate
+      operationId: createCandidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCandidateRequest'
+      responses:
+        '201':
+          description: Candidate created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateDto'
+
+  /candidates/{id}:
+    get:
+      tags: [Candidates]
+      summary: Get candidate by ID
+      operationId: getCandidate
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Candidate details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags: [Candidates]
+      summary: Update candidate
+      operationId: updateCandidate
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCandidateRequest'
+      responses:
+        '200':
+          description: Candidate updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateDto'
+
+  /candidates/{id}/status:
+    put:
+      tags: [Candidates]
+      summary: Update candidate status
+      operationId: updateCandidateStatus
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateDto'
+
+  # Interview Management
+  /interviews:
+    get:
+      tags: [Interviews]
+      summary: List interview sessions
+      operationId: listInterviews
+      parameters:
+        - name: candidateId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: vacancyId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/InterviewStatus'
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: List of interviews
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewPage'
+    
+    post:
+      tags: [Interviews]
+      summary: Create interview session
+      operationId: createInterview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInterviewRequest'
+      responses:
+        '201':
+          description: Interview created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewSessionDto'
+
+  /interviews/{sessionId}:
+    get:
+      tags: [Interviews]
+      summary: Get interview session
+      operationId: getInterview
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interview details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewSessionDto'
+    
+    put:
+      tags: [Interviews]
+      summary: Update interview session
+      operationId: updateInterview
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInterviewRequest'
+      responses:
+        '200':
+          description: Interview updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewSessionDto'
+
+  /interviews/validate:
+    post:
+      tags: [Interviews]
+      summary: Validate interview session (public)
+      operationId: validateInterview
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateInterviewRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewValidationResponse'
+
+  /interviews/{sessionId}/join:
+    post:
+      tags: [Interviews]
+      summary: Join interview session
+      operationId: joinInterview
+      security: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinInterviewRequest'
+      responses:
+        '200':
+          description: Room credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomCredentials'
+
+  /interviews/{sessionId}/cancel:
+    post:
+      tags: [Interviews]
+      summary: Cancel interview
+      operationId: cancelInterview
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelInterviewRequest'
+      responses:
+        '200':
+          description: Interview cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewSessionDto'
+
+  /interviews/{sessionId}/end:
+    post:
+      tags: [Interviews]
+      summary: End interview session
+      operationId: endInterview
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndInterviewRequest'
+      responses:
+        '200':
+          description: Interview ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewSessionDto'
+
+  /interviews/{sessionId}/report-issue:
+    post:
+      tags: [Interviews]
+      summary: Report technical issue
+      operationId: reportInterviewIssue
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportIssueRequest'
+      responses:
+        '201':
+          description: Issue reported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueTicketResponse'
+
+  # Interview Results
+  /interview-results/{sessionId}:
+    get:
+      tags: [Interviews]
+      summary: Get interview result
+      operationId: getInterviewResult
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interview result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewResultDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /interview-results/{sessionId}/review:
+    put:
+      tags: [Interviews]
+      summary: Update interview result review
+      operationId: reviewInterviewResult
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewInterviewRequest'
+      responses:
+        '200':
+          description: Review updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewResultDto'
+
+  /interview-results/{sessionId}/report:
+    get:
+      tags: [Interviews]
+      summary: Generate interview report
+      operationId: generateInterviewReport
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [PDF, DOCX, HTML]
+            default: PDF
+        - name: includeTranscript
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Report generated
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+
+  # Daily.co Room Management
+  /daily/rooms:
+    post:
+      tags: [Daily.co]
+      summary: Create Daily.co room
+      operationId: createDailyRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomRequest'
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyRoomResponse'
+
+  /daily/rooms/{roomName}:
+    get:
+      tags: [Daily.co]
+      summary: Get Daily.co room status
+      operationId: getDailyRoomStatus
+      parameters:
+        - name: roomName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Room status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomStatusResponse'
+    
+    delete:
+      tags: [Daily.co]
+      summary: Delete Daily.co room
+      operationId: deleteDailyRoom
+      parameters:
+        - name: roomName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Room deleted
+
+  # Resume Processing
+  /resumes/upload:
+    post:
+      tags: [Resumes]
+      summary: Upload resume
+      operationId: uploadResume
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                candidateId:
+                  type: integer
+                  format: int64
+                vacancyId:
+                  type: integer
+                  format: int64
+      responses:
+        '201':
+          description: Resume uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeUploadResponse'
+
+  /resumes/{id}/analysis:
+    get:
+      tags: [Resumes]
+      summary: Get resume analysis
+      operationId: getResumeAnalysis
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Resume analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeAnalysisResultDto'
+
+  # Question Bank
+  /questions:
+    get:
+      tags: [Questions]
+      summary: List questions
+      operationId: listQuestions
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/QuestionCategory'
+        - name: difficulty
+          in: query
+          schema:
+            $ref: '#/components/schemas/DifficultyLevel'
+        - name: skills
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionPage'
+    
+    post:
+      tags: [Questions]
+      summary: Create question
+      operationId: createQuestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        '201':
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionDto'
+
+  /questions/{id}:
+    get:
+      tags: [Questions]
+      summary: Get question
+      operationId: getQuestion
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Question details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionDto'
+    
+    put:
+      tags: [Questions]
+      summary: Update question
+      operationId: updateQuestion
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuestionRequest'
+      responses:
+        '200':
+          description: Question updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionDto'
+    
+    delete:
+      tags: [Questions]
+      summary: Delete question
+      operationId: deleteQuestion
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '204':
+          description: Question deleted
+
+  # Analytics
+  /analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get dashboard analytics
+      operationId: getDashboardAnalytics
+      parameters:
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Dashboard analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardAnalyticsDto'
+
+  /analytics/vacancies/{id}:
+    get:
+      tags: [Analytics]
+      summary: Get vacancy analytics
+      operationId: getVacancyAnalytics
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Vacancy analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyAnalyticsDto'
+
+  /interviews/statistics:
+    get:
+      tags: [Analytics]
+      summary: Get interview statistics
+      operationId: getInterviewStatistics
+      parameters:
+        - name: vacancyId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+      responses:
+        '200':
+          description: Interview statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewStatisticsDto'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    
+    pageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+    
+    sizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    
+    sortParam:
+      name: sort
+      in: query
+      schema:
+        type: string
+        example: "createdAt,desc"
+    
+    statusParam:
+      name: status
+      in: query
+      schema:
+        $ref: '#/components/schemas/VacancyStatus'
+    
+    departmentParam:
+      name: department
+      in: query
+      schema:
+        type: string
+    
+    locationParam:
+      name: location
+      in: query
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # Common schemas
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    MessageResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+    PageMetadata:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+
+    # Authentication schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 100
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 100
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+        - tokenType
+        - expiresIn
+        - user
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+        user:
+          $ref: '#/components/schemas/UserDto'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    RefreshTokenResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+
+    LogoutRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    PasswordResetRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    PasswordResetConfirm:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+
+    TokenValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+        userId:
+          type: integer
+          format: int64
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    # User schemas
+    UserDto:
+      type: object
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+        - role
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        department:
+          type: string
+        position:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        department:
+          type: string
+        position:
+          type: string
+
+    # Vacancy schemas
+    VacancyDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        department:
+          type: string
+        location:
+          type: string
+        type:
+          $ref: '#/components/schemas/EmploymentType'
+        status:
+          $ref: '#/components/schemas/VacancyStatus'
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        responsibilities:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experience:
+          $ref: '#/components/schemas/ExperienceLevel'
+        salary:
+          $ref: '#/components/schemas/SalaryRange'
+        benefits:
+          type: array
+          items:
+            type: string
+        applicantsCount:
+          type: integer
+        interviewedCount:
+          type: integer
+        hiredCount:
+          type: integer
+        createdBy:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+
+    VacancyPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/VacancyDto'
+
+    CreateVacancyRequest:
+      type: object
+      required:
+        - title
+        - department
+        - location
+        - type
+        - description
+        - requirements
+        - experience
+      properties:
+        title:
+          type: string
+        department:
+          type: string
+        location:
+          type: string
+        type:
+          $ref: '#/components/schemas/EmploymentType'
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        responsibilities:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experience:
+          $ref: '#/components/schemas/ExperienceLevel'
+        salary:
+          $ref: '#/components/schemas/SalaryRange'
+        benefits:
+          type: array
+          items:
+            type: string
+
+    UpdateVacancyRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        department:
+          type: string
+        location:
+          type: string
+        type:
+          $ref: '#/components/schemas/EmploymentType'
+        status:
+          $ref: '#/components/schemas/VacancyStatus'
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        responsibilities:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experience:
+          $ref: '#/components/schemas/ExperienceLevel'
+        salary:
+          $ref: '#/components/schemas/SalaryRange'
+        benefits:
+          type: array
+          items:
+            type: string
+
+    SalaryRange:
+      type: object
+      properties:
+        min:
+          type: number
+        max:
+          type: number
+        currency:
+          type: string
+          default: RUB
+        period:
+          $ref: '#/components/schemas/SalaryPeriod'
+
+    # Candidate schemas
+    CandidateDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        linkedIn:
+          type: string
+        portfolio:
+          type: string
+        currentPosition:
+          type: string
+        currentCompany:
+          type: string
+        experience:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationDto'
+        workHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperienceDto'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LanguageDto'
+        expectedSalary:
+          $ref: '#/components/schemas/SalaryRange'
+        location:
+          type: string
+        relocationReady:
+          type: boolean
+        resumeUrl:
+          type: string
+        resumeText:
+          type: string
+        matchScore:
+          type: number
+        status:
+          $ref: '#/components/schemas/CandidateStatus'
+        source:
+          $ref: '#/components/schemas/CandidateSource'
+        appliedVacancies:
+          type: array
+          items:
+            type: integer
+            format: int64
+        notes:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CandidatePage:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/CandidateDto'
+
+    CreateCandidateRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        linkedIn:
+          type: string
+        portfolio:
+          type: string
+        currentPosition:
+          type: string
+        currentCompany:
+          type: string
+        experience:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationDto'
+        workHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperienceDto'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LanguageDto'
+        expectedSalary:
+          $ref: '#/components/schemas/SalaryRange'
+        location:
+          type: string
+        relocationReady:
+          type: boolean
+        vacancyId:
+          type: integer
+          format: int64
+        source:
+          $ref: '#/components/schemas/CandidateSource'
+
+    UpdateCandidateRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        linkedIn:
+          type: string
+        portfolio:
+          type: string
+        currentPosition:
+          type: string
+        currentCompany:
+          type: string
+        experience:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationDto'
+        workHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperienceDto'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LanguageDto'
+        expectedSalary:
+          $ref: '#/components/schemas/SalaryRange'
+        location:
+          type: string
+        relocationReady:
+          type: boolean
+        notes:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/CandidateStatus'
+        reason:
+          type: string
+
+    EducationDto:
+      type: object
+      properties:
+        institution:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        startYear:
+          type: integer
+        endYear:
+          type: integer
+        isOngoing:
+          type: boolean
+
+    WorkExperienceDto:
+      type: object
+      properties:
+        company:
+          type: string
+        position:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isOngoing:
+          type: boolean
+        achievements:
+          type: array
+          items:
+            type: string
+
+    LanguageDto:
+      type: object
+      properties:
+        language:
+          type: string
+        proficiency:
+          $ref: '#/components/schemas/LanguageProficiency'
+
+    # Interview schemas
+    InterviewSessionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        sessionId:
+          type: string
+          format: uuid
+        candidateId:
+          type: integer
+          format: int64
+        vacancyId:
+          type: integer
+          format: int64
+        candidateName:
+          type: string
+        candidateEmail:
+          type: string
+        position:
+          type: string
+        department:
+          type: string
+        scheduledTime:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        type:
+          $ref: '#/components/schemas/InterviewType'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+        status:
+          $ref: '#/components/schemas/InterviewStatus'
+        roomUrl:
+          type: string
+        roomToken:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        actualDuration:
+          type: integer
+        recordingUrl:
+          type: string
+        transcriptUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InterviewPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/InterviewSessionDto'
+
+    CreateInterviewRequest:
+      type: object
+      required:
+        - candidateId
+        - vacancyId
+        - scheduledTime
+        - difficulty
+      properties:
+        candidateId:
+          type: integer
+          format: int64
+        vacancyId:
+          type: integer
+          format: int64
+        scheduledTime:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          default: 30
+        type:
+          $ref: '#/components/schemas/InterviewType'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+
+    UpdateInterviewRequest:
+      type: object
+      properties:
+        scheduledTime:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        type:
+          $ref: '#/components/schemas/InterviewType'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+
+    ValidateInterviewRequest:
+      type: object
+      required:
+        - sessionId
+        - token
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        token:
+          type: string
+
+    InterviewValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        session:
+          type: object
+          properties:
+            sessionId:
+              type: string
+            candidateName:
+              type: string
+            position:
+              type: string
+            scheduledTime:
+              type: string
+              format: date-time
+            duration:
+              type: integer
+            status:
+              $ref: '#/components/schemas/InterviewStatus'
+        timeUntilInterview:
+          type: integer
+        canJoin:
+          type: boolean
+        message:
+          type: string
+
+    JoinInterviewRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+        deviceInfo:
+          type: object
+          properties:
+            browser:
+              type: string
+            os:
+              type: string
+            microphone:
+              type: boolean
+            camera:
+              type: boolean
+
+    RoomCredentials:
+      type: object
+      properties:
+        roomUrl:
+          type: string
+        roomToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        enableRecording:
+          type: boolean
+        enableTranscription:
+          type: boolean
+        aiAssistant:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            avatarUrl:
+              type: string
+            voice:
+              type: string
+            language:
+              type: string
+        interviewQuestions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              question:
+                type: string
+              category:
+                $ref: '#/components/schemas/QuestionCategory'
+              timeLimit:
+                type: integer
+
+    CancelInterviewRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+        notifyCandidate:
+          type: boolean
+
+    EndInterviewRequest:
+      type: object
+      properties:
+        actualDuration:
+          type: integer
+        completionStatus:
+          type: string
+        technicalIssues:
+          type: boolean
+        candidateFeedback:
+          type: string
+
+    ReportIssueRequest:
+      type: object
+      required:
+        - issueType
+        - description
+      properties:
+        issueType:
+          type: string
+          enum: [AUDIO, VIDEO, CONNECTION, PLATFORM, OTHER]
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        userAgent:
+          type: string
+        screenshot:
+          type: string
+
+    IssueTicketResponse:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+
+    ReviewInterviewRequest:
+      type: object
+      properties:
+        reviewNotes:
+          type: string
+        hiringDecision:
+          type: string
+          enum: [PROCEED, HOLD, REJECT]
+        additionalComments:
+          type: string
+
+    # Interview Result schemas
+    InterviewResultDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        sessionId:
+          type: string
+        interviewId:
+          type: integer
+          format: int64
+        overallScore:
+          type: number
+        technicalScore:
+          type: number
+        behavioralScore:
+          type: number
+        culturalScore:
+          type: number
+        communicationScore:
+          type: number
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: string
+        aiSummary:
+          type: string
+        detailedAnalysis:
+          type: object
+          additionalProperties:
+            type: object
+        questionsAsked:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionResultDto'
+        redFlags:
+          type: array
+          items:
+            type: string
+        hiringRecommendation:
+          $ref: '#/components/schemas/HiringRecommendation'
+        confidence:
+          type: number
+        processedAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: integer
+          format: int64
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewNotes:
+          type: string
+
+    QuestionResultDto:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        question:
+          type: string
+        category:
+          $ref: '#/components/schemas/QuestionCategory'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+        candidateAnswer:
+          type: string
+        score:
+          type: number
+        aiAnalysis:
+          type: string
+        keyPointsCovered:
+          type: array
+          items:
+            type: string
+        keyPointsMissed:
+          type: array
+          items:
+            type: string
+        followUpSuggestions:
+          type: array
+          items:
+            type: string
+
+    # Daily.co schemas
+    CreateRoomRequest:
+      type: object
+      required:
+        - sessionId
+        - candidateName
+        - duration
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        candidateName:
+          type: string
+        duration:
+          type: integer
+        enableRecording:
+          type: boolean
+        enableTranscription:
+          type: boolean
+
+    DailyRoomResponse:
+      type: object
+      properties:
+        roomUrl:
+          type: string
+        roomName:
+          type: string
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        properties:
+          type: object
+          additionalProperties: true
+
+    RoomStatusResponse:
+      type: object
+      properties:
+        roomName:
+          type: string
+        url:
+          type: string
+        isActive:
+          type: boolean
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
+              userName:
+                type: string
+              joinedAt:
+                type: string
+                format: date-time
+              audioEnabled:
+                type: boolean
+              videoEnabled:
+                type: boolean
+        recordingStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # Resume schemas
+    ResumeUploadResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        candidateId:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+        fileUrl:
+          type: string
+        fileSize:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+        processingStatus:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+
+    ResumeAnalysisResultDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        candidateId:
+          type: integer
+          format: int64
+        extractedData:
+          $ref: '#/components/schemas/ExtractedResumeData'
+        matchScore:
+          type: number
+        skillsMatch:
+          type: array
+          items:
+            type: object
+            properties:
+              skill:
+                type: string
+              matchLevel:
+                type: string
+              score:
+                type: number
+        experienceMatch:
+          type: object
+        educationMatch:
+          type: object
+        overallAssessment:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        gaps:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    ExtractedResumeData:
+      type: object
+      properties:
+        personalInfo:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+            location:
+              type: string
+        summary:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experience:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperienceDto'
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationDto'
+        certifications:
+          type: array
+          items:
+            type: string
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LanguageDto'
+
+    # Question Bank schemas
+    QuestionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        question:
+          type: string
+        category:
+          $ref: '#/components/schemas/QuestionCategory'
+        subcategory:
+          type: string
+        type:
+          $ref: '#/components/schemas/QuestionType'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+        skills:
+          type: array
+          items:
+            type: string
+        expectedAnswerPoints:
+          type: array
+          items:
+            type: string
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+        timeLimit:
+          type: integer
+        isActive:
+          type: boolean
+        usageCount:
+          type: integer
+        averageScore:
+          type: number
+        tags:
+          type: array
+          items:
+            type: string
+        createdBy:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    QuestionPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionDto'
+
+    CreateQuestionRequest:
+      type: object
+      required:
+        - question
+        - category
+        - difficulty
+      properties:
+        question:
+          type: string
+        category:
+          $ref: '#/components/schemas/QuestionCategory'
+        subcategory:
+          type: string
+        type:
+          $ref: '#/components/schemas/QuestionType'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+        skills:
+          type: array
+          items:
+            type: string
+        expectedAnswerPoints:
+          type: array
+          items:
+            type: string
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+        timeLimit:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateQuestionRequest:
+      type: object
+      properties:
+        question:
+          type: string
+        category:
+          $ref: '#/components/schemas/QuestionCategory'
+        subcategory:
+          type: string
+        type:
+          $ref: '#/components/schemas/QuestionType'
+        difficulty:
+          $ref: '#/components/schemas/DifficultyLevel'
+        skills:
+          type: array
+          items:
+            type: string
+        expectedAnswerPoints:
+          type: array
+          items:
+            type: string
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+        timeLimit:
+          type: integer
+        isActive:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    # Analytics schemas
+    DashboardAnalyticsDto:
+      type: object
+      properties:
+        totalVacancies:
+          type: integer
+        activeVacancies:
+          type: integer
+        totalCandidates:
+          type: integer
+        newCandidatesThisWeek:
+          type: integer
+        totalInterviews:
+          type: integer
+        scheduledInterviews:
+          type: integer
+        completedInterviews:
+          type: integer
+        averageMatchScore:
+          type: number
+        averageInterviewScore:
+          type: number
+        hiringRate:
+          type: number
+        timeToHire:
+          type: number
+        topSkillsInDemand:
+          type: array
+          items:
+            type: object
+            properties:
+              skill:
+                type: string
+              demand:
+                type: integer
+        departmentMetrics:
+          type: array
+          items:
+            type: object
+            properties:
+              department:
+                type: string
+              vacancies:
+                type: integer
+              candidates:
+                type: integer
+              hired:
+                type: integer
+        weeklyTrends:
+          type: array
+          items:
+            type: object
+            properties:
+              week:
+                type: string
+              applications:
+                type: integer
+              interviews:
+                type: integer
+              hires:
+                type: integer
+        conversionFunnel:
+          type: object
+          properties:
+            applied:
+              type: integer
+            screened:
+              type: integer
+            interviewed:
+              type: integer
+            offered:
+              type: integer
+            hired:
+              type: integer
+
+    VacancyAnalyticsDto:
+      type: object
+      properties:
+        vacancyId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        totalApplicants:
+          type: integer
+        qualifiedApplicants:
+          type: integer
+        interviewedCandidates:
+          type: integer
+        offersExtended:
+          type: integer
+        offersAccepted:
+          type: integer
+        averageMatchScore:
+          type: number
+        averageInterviewScore:
+          type: number
+        timeToFill:
+          type: integer
+        sourceBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+        skillsAnalysis:
+          type: array
+          items:
+            type: object
+            properties:
+              skill:
+                type: string
+              required:
+                type: boolean
+              candidatesWithSkill:
+                type: integer
+        rejectionReasons:
+          type: object
+          additionalProperties:
+            type: integer
+        candidatePipeline:
+          type: array
+          items:
+            type: object
+            properties:
+              stage:
+                type: string
+              count:
+                type: integer
+              averageTimeInStage:
+                type: integer
+
+    InterviewStatisticsDto:
+      type: object
+      properties:
+        totalInterviews:
+          type: integer
+        completedInterviews:
+          type: integer
+        cancelledInterviews:
+          type: integer
+        noShowInterviews:
+          type: integer
+        averageDuration:
+          type: number
+        averageScore:
+          type: number
+        completionRate:
+          type: number
+        technicalIssuesRate:
+          type: number
+        byStatus:
+          type: object
+          additionalProperties:
+            type: integer
+        byType:
+          type: object
+          additionalProperties:
+            type: integer
+        scoreDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+        dailyTrends:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              scheduled:
+                type: integer
+              completed:
+                type: integer
+              averageScore:
+                type: number
+
+    # Enums
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - HR_MANAGER
+        - HR_SPECIALIST
+        - RECRUITER
+        - HIRING_MANAGER
+        - CANDIDATE
+
+    VacancyStatus:
+      type: string
+      enum:
+        - DRAFT
+        - ACTIVE
+        - PAUSED
+        - CLOSED
+        - ARCHIVED
+
+    EmploymentType:
+      type: string
+      enum:
+        - FULL_TIME
+        - PART_TIME
+        - CONTRACT
+        - INTERNSHIP
+        - FREELANCE
+
+    ExperienceLevel:
+      type: string
+      enum:
+        - ENTRY
+        - JUNIOR
+        - MIDDLE
+        - SENIOR
+        - LEAD
+        - EXECUTIVE
+
+    CandidateStatus:
+      type: string
+      enum:
+        - NEW
+        - SCREENING
+        - SHORTLISTED
+        - INTERVIEW_SCHEDULED
+        - INTERVIEW_COMPLETED
+        - TECHNICAL_TEST
+        - REFERENCE_CHECK
+        - OFFER_EXTENDED
+        - OFFER_ACCEPTED
+        - OFFER_DECLINED
+        - HIRED
+        - REJECTED
+        - WITHDRAWN
+
+    CandidateSource:
+      type: string
+      enum:
+        - DIRECT
+        - REFERRAL
+        - LINKEDIN
+        - HEADHUNTER
+        - JOB_BOARD
+        - UNIVERSITY
+        - INTERNAL
+        - OTHER
+
+    InterviewStatus:
+      type: string
+      enum:
+        - SCHEDULED
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+        - NO_SHOW
+        - RESCHEDULED
+        - TECHNICAL_ISSUE
+
+    InterviewType:
+      type: string
+      enum:
+        - SCREENING
+        - TECHNICAL
+        - BEHAVIORAL
+        - CULTURAL
+        - FINAL
+        - MIXED
+
+    DifficultyLevel:
+      type: string
+      enum:
+        - EASY
+        - MEDIUM
+        - HARD
+        - EXPERT
+
+    QuestionCategory:
+      type: string
+      enum:
+        - TECHNICAL
+        - BEHAVIORAL
+        - SITUATIONAL
+        - CULTURAL
+        - GENERAL
+        - ROLE_SPECIFIC
+
+    QuestionType:
+      type: string
+      enum:
+        - OPEN_ENDED
+        - MULTIPLE_CHOICE
+        - CODING
+        - CASE_STUDY
+        - SCENARIO
+
+    LanguageProficiency:
+      type: string
+      enum:
+        - NATIVE
+        - FLUENT
+        - ADVANCED
+        - INTERMEDIATE
+        - BASIC
+
+    HiringRecommendation:
+      type: string
+      enum:
+        - STRONGLY_RECOMMEND
+        - RECOMMEND
+        - NEUTRAL
+        - NOT_RECOMMEND
+        - STRONGLY_NOT_RECOMMEND
+
+    SalaryPeriod:
+      type: string
+      enum:
+        - HOURLY
+        - DAILY
+        - WEEKLY
+        - MONTHLY
+        - YEARLY

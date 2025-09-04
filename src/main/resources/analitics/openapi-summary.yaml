@@ -1,0 +1,428 @@
+# OpenAPI 3.0 Specification Summary for VTB AI HR Assistant
+# Full specification should be generated using Spring Boot OpenAPI annotations
+openapi: 3.0.3
+info:
+  title: VTB AI HR Assistant API
+  description: Backend API for AI-powered HR interview automation platform
+  version: 1.0.0
+  contact:
+    name: VTB AI HR Team
+    email: support@vtbaihr.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api-staging.vtbaihr.com/api/v1
+    description: Staging server
+  - url: https://api.vtbaihr.com/api/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Reference to api-models.md for complete schema definitions
+    # Key schemas listed here for quick reference:
+    
+    UserDto:
+      type: object
+      required: [id, email, firstName, lastName, role]
+      properties:
+        id: { type: integer, format: int64 }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { $ref: '#/components/schemas/UserRole' }
+    
+    AuthResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn, user]
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        tokenType: { type: string, default: Bearer }
+        expiresIn: { type: integer, format: int64 }
+        user: { $ref: '#/components/schemas/UserDto' }
+    
+    VacancyDto:
+      type: object
+      required: [title, department, location, type, description]
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        department: { type: string }
+        location: { type: string }
+        type: { $ref: '#/components/schemas/EmploymentType' }
+        status: { $ref: '#/components/schemas/VacancyStatus' }
+    
+    CandidateDto:
+      type: object
+      required: [firstName, lastName, email]
+      properties:
+        id: { type: integer, format: int64 }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        status: { $ref: '#/components/schemas/CandidateStatus' }
+    
+    InterviewSessionDto:
+      type: object
+      required: [sessionId, candidateId, vacancyId, scheduledTime]
+      properties:
+        id: { type: integer, format: int64 }
+        sessionId: { type: string, format: uuid }
+        candidateId: { type: integer, format: int64 }
+        vacancyId: { type: integer, format: int64 }
+        status: { $ref: '#/components/schemas/InterviewStatus' }
+    
+    # Enums
+    UserRole:
+      type: string
+      enum: [ADMIN, HR_MANAGER, HR_SPECIALIST, RECRUITER, HIRING_MANAGER, CANDIDATE]
+    
+    VacancyStatus:
+      type: string
+      enum: [DRAFT, ACTIVE, PAUSED, CLOSED, ARCHIVED]
+    
+    EmploymentType:
+      type: string
+      enum: [FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE]
+    
+    CandidateStatus:
+      type: string
+      enum: [NEW, SCREENING, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEW_COMPLETED, 
+             TECHNICAL_TEST, REFERENCE_CHECK, OFFER_EXTENDED, OFFER_ACCEPTED, 
+             OFFER_DECLINED, HIRED, REJECTED, WITHDRAWN]
+    
+    InterviewStatus:
+      type: string
+      enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW, RESCHEDULED, TECHNICAL_ISSUE]
+
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              timestamp: { type: string, format: date-time }
+              status: { type: integer, example: 401 }
+              error: { type: string }
+              message: { type: string }
+              path: { type: string }
+
+paths:
+  # Authentication Endpoints - See api-auth.md for details
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  
+  # Vacancy Endpoints - See api-hr.md for details
+  /vacancies:
+    get:
+      tags: [Vacancies]
+      summary: List vacancies
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/VacancyStatus'
+        - name: page
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: List of vacancies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VacancyDto'
+                  totalElements: { type: integer }
+                  totalPages: { type: integer }
+    
+    post:
+      tags: [Vacancies]
+      summary: Create vacancy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVacancyRequest'
+      responses:
+        '201':
+          description: Vacancy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+  
+  /vacancies/{id}:
+    get:
+      tags: [Vacancies]
+      summary: Get vacancy by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Vacancy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+    
+    put:
+      tags: [Vacancies]
+      summary: Update vacancy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVacancyRequest'
+      responses:
+        '200':
+          description: Vacancy updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacancyDto'
+    
+    delete:
+      tags: [Vacancies]
+      summary: Delete vacancy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Vacancy deleted
+  
+  # Candidate Endpoints - See api-hr.md for details
+  /candidates:
+    get:
+      tags: [Candidates]
+      summary: List candidates
+      parameters:
+        - name: vacancyId
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CandidateStatus'
+      responses:
+        '200':
+          description: List of candidates
+    
+    post:
+      tags: [Candidates]
+      summary: Create candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCandidateRequest'
+      responses:
+        '201':
+          description: Candidate created
+  
+  # Interview Endpoints - See api-interviews.md for details
+  /interviews:
+    get:
+      tags: [Interviews]
+      summary: List interview sessions
+      parameters:
+        - name: candidateId
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: vacancyId
+          in: query
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: List of interviews
+    
+    post:
+      tags: [Interviews]
+      summary: Create interview session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInterviewRequest'
+      responses:
+        '201':
+          description: Interview created
+  
+  /interviews/validate:
+    post:
+      tags: [Interviews]
+      summary: Validate interview session (public)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, token]
+              properties:
+                sessionId: { type: string, format: uuid }
+                token: { type: string }
+      responses:
+        '200':
+          description: Validation result
+  
+  /interviews/{sessionId}/join:
+    post:
+      tags: [Interviews]
+      summary: Join interview session
+      security: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Room credentials
+  
+  # Daily.co Integration - See api-interviews.md for details
+  /daily/rooms:
+    post:
+      tags: [Daily.co]
+      summary: Create Daily.co room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, candidateName, duration]
+              properties:
+                sessionId: { type: string, format: uuid }
+                candidateName: { type: string }
+                duration: { type: integer }
+      responses:
+        '201':
+          description: Room created
+  
+  # Resume Processing - See api-hr.md for details
+  /resumes/upload:
+    post:
+      tags: [Resumes]
+      summary: Upload resume
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                candidateId: { type: integer, format: int64 }
+                vacancyId: { type: integer, format: int64 }
+      responses:
+        '201':
+          description: Resume uploaded
+  
+  # Analytics - See api-hr.md for details
+  /analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get dashboard analytics
+      parameters:
+        - name: fromDate
+          in: query
+          schema: { type: string, format: date }
+        - name: toDate
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Dashboard analytics
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Vacancies
+    description: Job vacancy management
+  - name: Candidates
+    description: Candidate management
+  - name: Interviews
+    description: Interview session management
+  - name: Daily.co
+    description: Daily.co video room integration
+  - name: Resumes
+    description: Resume processing and analysis
+  - name: Questions
+    description: Interview question bank
+  - name: Analytics
+    description: Analytics and reporting
+  - name: Notifications
+    description: Email and SMS notifications

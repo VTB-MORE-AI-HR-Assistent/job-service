@@ -3,53 +3,44 @@ spring:
     url: jdbc:postgresql://localhost:5432/ai_hr_db
     username: postgres
     password: 1234
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          lob:
-            non_contextual_creation: true
-  ai:
-    openai:
-      api-key: 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
-      chat:
-        options:
-          model: 4о
-          temperature: 0.1
-          max-tokens: 2000
+        show_sql: true
+        format_sql: true
+    open-in-view: false
+
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  docker:
-    compose:
-      enabled: false
+
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
 
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+
 springdoc:
-  api-docs:
-    path: /api-docs
-    enabled: true
   swagger-ui:
     path: /swagger-ui.html
-    enabled: true
     tags-sorter: alpha
     operations-sorter: alpha
     display-request-duration: true
-    doc-expansion: none
-    defaultModelsExpandDepth: -1
-    show-extensions: true
-    show-common-extensions: true
-  default-produces-media-type: application/json
-  default-consumes-media-type: application/json
-  show-actuator: false
-  cache:
-    disabled: true
 
 server:
   port: 8585
+
+logging:
+  level:
+    com.aristurtle: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
