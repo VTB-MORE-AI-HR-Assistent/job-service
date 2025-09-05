@@ -21,12 +21,9 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/vacancies")
 @Tag(name = "Vacancies", description = "API для управления вакансиями")
 class VacancyController(
-    private val vacancyService: VacancyService
+    private val vacancyService: VacancyService,
+    private val modelMapper: ModelMapper
 ) {
-    companion object {
-        private val modelMapper = ModelMapper()
-    }
-
     @Operation(
         summary = "Получить все вакансии",
         description = "Возвращает список вакансий с возможностью пагинации"
@@ -97,7 +94,7 @@ class VacancyController(
         @RequestBody vacancyRequest: VacancyRequest
     ): ResponseEntity<Vacancy> {
         val createdVacancy = vacancyService.createVacancy(
-            modelMapper.map<Vacancy>(vacancyRequest, Vacancy::class.java)
+            modelMapper.map(vacancyRequest, Vacancy::class.java)
         )
         return ResponseEntity.status(HttpStatus.CREATED).body(createdVacancy)
     }
@@ -127,7 +124,7 @@ class VacancyController(
         return try {
             val updatedVacancy = vacancyService.updateVacancy(
                 id = id,
-                vacancy = modelMapper.map<Vacancy>(vacancyRequest, Vacancy::class.java)
+                vacancy = modelMapper.map(vacancyRequest, Vacancy::class.java)
             )
             ResponseEntity.ok(updatedVacancy)
         } catch (e: NoSuchElementException) {
