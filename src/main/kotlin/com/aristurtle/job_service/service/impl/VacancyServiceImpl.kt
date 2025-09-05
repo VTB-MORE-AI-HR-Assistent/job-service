@@ -1,11 +1,13 @@
 package com.aristurtle.job_service.service.impl
 
-import com.aristurtle.job_service.dto.VacancyRequest
+import com.aristurtle.job_service.dto.VacancySearchCriteria
 import com.aristurtle.job_service.model.Vacancy
 import com.aristurtle.job_service.repository.VacancyRepository
 import com.aristurtle.job_service.service.VacancyService
+import com.aristurtle.job_service.util.VacancySpecifications
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 import java.util.*
@@ -67,22 +69,40 @@ class VacancyServiceImpl(
         }
     }
 
-//    override fun searchVacancies(
-//        vacancyRequest: VacancyRequest
-//    ): List<Vacancy> =
-//        vacancyRepository.findByRequest(vacancyRequest)
-//
-//    override fun searchVacancies(
-//        vacancyRequest: VacancyRequest,
-//        pageable: Pageable
-//    ): List<Vacancy> =
-//        vacancyRepository.findByRequest(vacancyRequest, pageable)
-
-    override fun getCountByStatus(): Map<String, Long> {
-        return vacancyRepository.countByStatus()
+    override fun searchVacancies(vacancySearchCriteria: VacancySearchCriteria): List<Vacancy> {
+        val specification = createSpecification(vacancySearchCriteria)
+        return vacancyRepository.findAll(specification)
     }
 
-    override fun getCountByRegion(): Map<String, Long> {
-        return vacancyRepository.countByRegion()
+    override fun searchVacancies(vacancySearchCriteria: VacancySearchCriteria, pageable: Pageable): List<Vacancy> {
+        val specification = createSpecification(vacancySearchCriteria)
+        return vacancyRepository.findAll(specification, pageable).toList()
+    }
+
+    private fun createSpecification(vacancySearchCriteria: VacancySearchCriteria): Specification<Vacancy> {
+        return Specification.allOf(
+            vacancySearchCriteria.status?.let { VacancySpecifications.hasStatus(it) },
+            vacancySearchCriteria.region?.let { VacancySpecifications.hasRegion(it) },
+            vacancySearchCriteria.city?.let { VacancySpecifications.hasCity(it) },
+            vacancySearchCriteria.address?.let { VacancySpecifications.containsAddress(it) },
+            vacancySearchCriteria.workType?.let { VacancySpecifications.hasWorkType(it) },
+            vacancySearchCriteria.employmentType?.let { VacancySpecifications.hasEmploymentType(it) },
+            vacancySearchCriteria.income?.let { VacancySpecifications.hasIncome(it) },
+            vacancySearchCriteria.salaryMin?.let { VacancySpecifications.salaryGreaterThanOrEqual(it) },
+            vacancySearchCriteria.salaryMax?.let { VacancySpecifications.salaryLessThanOrEqual(it) },
+            vacancySearchCriteria.workSchedule?.let { VacancySpecifications.hasWorkSchedule(it) },
+            vacancySearchCriteria.annualBonus?.let { VacancySpecifications.hasAnnualBonus(it) },
+            vacancySearchCriteria.bonusType?.let { VacancySpecifications.hasBonusType(it) },
+            vacancySearchCriteria.educationType?.let { VacancySpecifications.hasEducationType(it) },
+            vacancySearchCriteria.experienceFrom?.let { VacancySpecifications.experienceGreaterThanOrEqual(it) },
+            vacancySearchCriteria.experienceTo?.let { VacancySpecifications.experienceLessThanOrEqual(it) },
+            vacancySearchCriteria.businessTrips?.let { VacancySpecifications.hasBusinessTrips(it) },
+            vacancySearchCriteria.additionalInfo?.let { VacancySpecifications.containsAdditionalInfo(it) },
+            if (vacancySearchCriteria.responsibilities.isNotEmpty()) VacancySpecifications.hasAnyResponsibility(vacancySearchCriteria.responsibilities) else null,
+            if (vacancySearchCriteria.requirements.isNotEmpty()) VacancySpecifications.hasAnyRequirement(vacancySearchCriteria.requirements) else null,
+            if (vacancySearchCriteria.knowledgeLanguages.isNotEmpty()) VacancySpecifications.hasAnyKnowledgeLanguage(vacancySearchCriteria.knowledgeLanguages) else null,
+            if (vacancySearchCriteria.levelLanguages.isNotEmpty()) VacancySpecifications.hasAnyLevelLanguage(vacancySearchCriteria.levelLanguages) else null,
+            if (vacancySearchCriteria.programRequirements.isNotEmpty()) VacancySpecifications.hasAnyProgramRequirement(vacancySearchCriteria.programRequirements) else null
+        )
     }
 }

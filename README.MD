@@ -59,27 +59,6 @@ docker-compose up -d
 
 3. Настройте базу данных в `application.yml`
 
-## 🚀 API Endpoints
-
-### Основные endpoints
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| `GET` | `/api/v1/vacancies` | Получить все вакансии |
-| `GET` | `/api/v1/vacancies/{id}` | Получить вакансию по ID |
-| `POST` | `/api/v1/vacancies` | Создать новую вакансию |
-| `PUT` | `/api/v1/vacancies/{id}` | Обновить вакансию |
-| `DELETE` | `/api/v1/vacancies/{id}` | Удалить вакансию |
-| `GET` | `/api/v1/vacancies/search` | Поиск вакансий с фильтрами |
-
-### Поиск и фильтрация
-
-Поиск поддерживает следующие параметры:
-- `title` - поиск по названию вакансии
-- `company` - поиск по компании
-- `location` - поиск по местоположению
-- `isRemote` - удаленная работа (true/false)
-
 **Пример запроса поиска:**
 ```bash
 GET /api/v1/vacancies/search?title=Java&isRemote=true
@@ -93,6 +72,141 @@ GET /api/v1/vacancies/search?title=Java&isRemote=true
 - **Swagger UI:** http://localhost:8585/swagger-ui.html
 - **OpenAPI JSON:** http://localhost:8585/api-docs
 - **OpenAPI YAML:** http://localhost:8585/api-docs.yaml
+
+### DTO
+```kotlin
+data class VacancyRequest(
+    val status: String? = null,
+    val region: String? = null,
+    val city: String? = null,
+    val address: String? = null,
+    val workType: String? = null,
+    val employmentType: String? = null,
+    val income: Int? = null,
+    val salaryMax: Int? = null,
+    val salaryMin: Int? = null,
+    val workSchedule: String? = null,
+    val annualBonus: Int? = null,
+    val bonusType: String? = null,
+    val responsibilities: List<String> = emptyList(),
+    val requirements: List<String> = emptyList(),
+    val educationType: String? = null,
+    val experienceFrom: Int? = null,
+    val experienceTo: Int? = null,
+    val knowledgeLanguages: List<String> = emptyList(),
+    val levelLanguages: List<String> = emptyList(),
+    val businessTrips: Boolean? = null,
+    val additionalInfo: String? = null,
+    val programRequirements: List<String> = emptyList()
+)
+```
+
+```kotlin
+data class VacancySearchCriteria(
+    val status: String? = null,
+    val region: String? = null,
+    val city: String? = null,
+    val address: String? = null,
+    val workType: String? = null,
+    val employmentType: String? = null,
+    val income: Int? = null,
+    val salaryMax: Int? = null,
+    val salaryMin: Int? = null,
+    val workSchedule: String? = null,
+    val annualBonus: Int? = null,
+    val bonusType: String? = null,
+    val responsibilities: List<String> = emptyList(),
+    val requirements: List<String> = emptyList(),
+    val educationType: String? = null,
+    val experienceFrom: Int? = null,
+    val experienceTo: Int? = null,
+    val knowledgeLanguages: List<String> = emptyList(),
+    val levelLanguages: List<String> = emptyList(),
+    val businessTrips: Boolean? = null,
+    val additionalInfo: String? = null,
+    val programRequirements: List<String> = emptyList()
+)
+```
+
+### Model
+```kotlin
+@Entity
+@Table(name = "vacancies", schema = "jobs")
+data class Vacancy(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
+
+    @Column(name = "status", length = 50)
+    val status: String? = null,
+
+    @Column(name = "region", length = 100)
+    val region: String? = null,
+
+    @Column(name = "city", length = 100)
+    val city: String? = null,
+
+    @Column(name = "address", length = 255)
+    val address: String? = null,
+
+    @Column(name = "work_type", length = 100)
+    val workType: String? = null,
+
+    @Column(name = "employment_type", length = 100)
+    val employmentType: String? = null,
+
+    @Column(name = "income")
+    val income: Int? = null,
+
+    @Column(name = "salary_max")
+    val salaryMax: Int? = null,
+
+    @Column(name = "salary_min")
+    val salaryMin: Int? = null,
+
+    @Column(name = "work_schedule", length = 100)
+    val workSchedule: String? = null,
+
+    @Column(name = "annual_bonus")
+    val annualBonus: Int? = null,
+
+    @Column(name = "bonus_type", length = 50)
+    val bonusType: String? = null,
+
+    @Column(name = "responsibilities", columnDefinition = "TEXT[]")
+    val responsibilities: List<String> = emptyList(),
+
+    @Column(name = "requirements", columnDefinition = "TEXT[]")
+    val requirements: List<String> = emptyList(),
+
+    @Column(name = "education_type", length = 100)
+    val educationType: String? = null,
+
+    @Column(name = "experience_from")
+    val experienceFrom: Int? = null,
+
+    @Column(name = "experience_to")
+    val experienceTo: Int? = null,
+
+    @Column(name = "knowledge_languages", columnDefinition = "VARCHAR(50)[]")
+    val knowledgeLanguages: List<String> = emptyList(),
+
+    @Column(name = "level_languages", columnDefinition = "VARCHAR(50)[]")
+    val levelLanguages: List<String> = emptyList(),
+
+    @Column(name = "business_trips")
+    val businessTrips: Boolean? = null,
+
+    @Column(name = "additional_info", columnDefinition = "TEXT")
+    val additionalInfo: String? = null,
+
+    @Column(name = "program_requirements", columnDefinition = "TEXT[]")
+    val programRequirements: List<String> = emptyList(),
+
+    @Column(name = "creation_dts", nullable = false)
+    val creationDts: OffsetDateTime = OffsetDateTime.now()
+)
+```
 
 ## 🧪 Тестирование
 
@@ -111,12 +225,6 @@ GET /api/v1/vacancies/search?title=Java&isRemote=true
 # Запуск с покрытием кода
 ./gradlew test jacocoTestReport
 ```
-
-### Структура тестов
-
-- **Unit тесты** - тестирование отдельных компонентов
-- **Интеграционные тесты** - тестирование API endpoints
-- **Валидационные тесты** - тестирование валидации данных
 
 ## 🐳 Docker
 

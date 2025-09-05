@@ -1,6 +1,7 @@
 package com.aristurtle.job_service.controller
 
 import com.aristurtle.job_service.dto.VacancyRequest
+import com.aristurtle.job_service.dto.VacancySearchCriteria
 import com.aristurtle.job_service.model.Vacancy
 import com.aristurtle.job_service.service.VacancyService
 import io.swagger.v3.oas.annotations.Operation
@@ -69,7 +70,7 @@ class VacancyController(
     ): ResponseEntity<Vacancy> {
         return vacancyService.getVacancyById(id)
             .map { ResponseEntity.ok(it) }
-            .orElse(ResponseEntity.notFound().build())
+            .orElse(ResponseEntity(HttpStatus.NOT_FOUND))
     }
 
     @Operation(
@@ -156,53 +157,31 @@ class VacancyController(
         }
     }
 
-//    @Operation(
-//        summary = "Поиск вакансий",
-//        description = "Расширенный поиск вакансий по различным критериям"
-//    )
-//    @ApiResponse(responseCode = "200", description = "Успешный поиск")
-//    @PostMapping("/search")
-//    fun searchVacancies(
-//        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-//            description = "Поисковый запрос",
-//            required = true,
-//            content = [Content(schema = Schema(implementation = VacancyRequest::class))]
-//        )
-//        @RequestBody vacancyRequest: VacancyRequest,
-//
-//        @Parameter(name = "pageNumber", description = "Параметр пагинации: номер начальной страницы", required = false)
-//        @RequestParam("pageNumber", required = false) pageNumber: Int?,
-//
-//        @Parameter(name = "pageSize", description = "Параметр пагинации: объем возвращаемых страниц", required = false)
-//        @RequestParam("pageSize", required = false) pageSize: Int?,
-//    ): ResponseEntity<List<Vacancy>> {
-//        val vacancies =
-//            if (pageNumber != null && pageSize != null)
-//                vacancyService.searchVacancies(vacancyRequest, PageRequest.of(pageNumber, pageSize))
-//            else
-//                vacancyService.searchVacancies(vacancyRequest)
-//        return ResponseEntity.ok(vacancies)
-//    }
-
     @Operation(
-        summary = "Статистика по статусам",
-        description = "Возвращает количество вакансий по каждому статусу"
+        summary = "Поиск вакансий",
+        description = "Расширенный поиск вакансий по различным критериям. Критерии описываются в формате JSON по схеме VacancySearchCriteria"
     )
-    @ApiResponse(responseCode = "200", description = "Успешное получение статистики")
-    @GetMapping("/stats/count-by-status")
-    fun getCountByStatus(): ResponseEntity<Map<String, Long>> {
-        val stats = vacancyService.getCountByStatus()
-        return ResponseEntity.ok(stats)
-    }
+    @ApiResponse(responseCode = "200", description = "Успешный поиск")
+    @PostMapping("/search")
+    fun searchVacancies(
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Поисковый объект",
+            required = true,
+            content = [Content(schema = Schema(implementation = VacancySearchCriteria::class))]
+        )
+        @RequestBody vacancySearchCriteria: VacancySearchCriteria,
 
-    @Operation(
-        summary = "Статистика по регионам",
-        description = "Возвращает количество вакансий по каждому региону"
-    )
-    @ApiResponse(responseCode = "200", description = "Успешное получение статистики")
-    @GetMapping("/stats/count-by-region")
-    fun getCountByRegion(): ResponseEntity<Map<String, Long>> {
-        val stats = vacancyService.getCountByRegion()
-        return ResponseEntity.ok(stats)
+        @Parameter(name = "pageNumber", description = "Параметр пагинации: номер начальной страницы", required = false)
+        @RequestParam("pageNumber", required = false) pageNumber: Int?,
+
+        @Parameter(name = "pageSize", description = "Параметр пагинации: объем возвращаемых страниц", required = false)
+        @RequestParam("pageSize", required = false) pageSize: Int?,
+    ): ResponseEntity<List<Vacancy>> {
+        val vacancies =
+            if (pageNumber != null && pageSize != null)
+                vacancyService.searchVacancies(vacancySearchCriteria, PageRequest.of(pageNumber, pageSize))
+            else
+                vacancyService.searchVacancies(vacancySearchCriteria)
+        return ResponseEntity.ok(vacancies)
     }
 }
