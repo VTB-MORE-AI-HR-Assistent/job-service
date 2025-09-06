@@ -152,6 +152,9 @@ data class Vacancy(
     @Column(name = "work_type", length = 100)
     val workType: String? = null,
 
+    @Column(name = "position_title")
+    val positionTitle: String? = null,
+
     @Column(name = "employment_type", length = 100)
     val employmentType: String? = null,
 
@@ -268,6 +271,7 @@ CREATE TABLE jobs.vacancies (
     region VARCHAR(100),
     city VARCHAR(100),
     address VARCHAR(255),
+    position_title varchar,
     work_type VARCHAR(100),
     employment_type VARCHAR(100),
     income INTEGER,

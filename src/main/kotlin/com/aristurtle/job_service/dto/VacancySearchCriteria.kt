@@ -10,6 +10,7 @@ data class VacancySearchCriteria(
     val income: Int? = null,
     val salaryMax: Int? = null,
     val salaryMin: Int? = null,
+    val positionTitle: String? = null,
     val workSchedule: String? = null,
     val annualBonus: Int? = null,
     val bonusType: String? = null,

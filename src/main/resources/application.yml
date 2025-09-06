@@ -25,7 +25,7 @@ spring:
       matching-strategy: ant_path_matcher
 
   jackson:
-    property-naming-strategy: SNAKE_CASE
+    property-naming-strategy: LOWER_CAMEL_CASE
     default-property-inclusion: non_null
 
 springdoc:

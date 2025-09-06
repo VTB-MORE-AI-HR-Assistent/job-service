@@ -90,6 +90,7 @@ class VacancyServiceImpl(
             vacancySearchCriteria.income?.let { VacancySpecifications.hasIncome(it) },
             vacancySearchCriteria.salaryMin?.let { VacancySpecifications.salaryGreaterThanOrEqual(it) },
             vacancySearchCriteria.salaryMax?.let { VacancySpecifications.salaryLessThanOrEqual(it) },
+            vacancySearchCriteria.positionTitle?.let { VacancySpecifications.hasPositionTitle(it) },
             vacancySearchCriteria.workSchedule?.let { VacancySpecifications.hasWorkSchedule(it) },
             vacancySearchCriteria.annualBonus?.let { VacancySpecifications.hasAnnualBonus(it) },
             vacancySearchCriteria.bonusType?.let { VacancySpecifications.hasBonusType(it) },

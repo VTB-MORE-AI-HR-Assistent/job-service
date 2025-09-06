@@ -29,6 +29,12 @@ object VacancySpecifications {
         }
     }
 
+    fun hasPositionTitle(positionTitle: String): Specification<Vacancy> {
+        return Specification { root, _, builder ->
+            builder.equal(root.get<String>("positionTitle"), positionTitle)
+        }
+    }
+
     fun hasWorkType(workType: String): Specification<Vacancy> {
         return Specification { root, _, builder ->
             builder.equal(root.get<String>("workType"), workType)

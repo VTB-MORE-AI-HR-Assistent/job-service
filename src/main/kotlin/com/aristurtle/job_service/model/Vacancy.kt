@@ -26,6 +26,9 @@ data class Vacancy(
     @Column(name = "work_type", length = 100)
     val workType: String? = null,
 
+    @Column(name = "position_title")
+    val positionTitle: String? = null,
+
     @Column(name = "employment_type", length = 100)
     val employmentType: String? = null,
 
