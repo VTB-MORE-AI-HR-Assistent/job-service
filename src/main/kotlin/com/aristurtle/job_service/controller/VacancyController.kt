@@ -1,6 +1,6 @@
 package com.aristurtle.job_service.controller
 
-import com.aristurtle.job_service.dto.VacancyRequest
+import com.aristurtle.job_service.dto.VacancyDto
 import com.aristurtle.job_service.dto.VacancySearchCriteria
 import com.aristurtle.job_service.model.Vacancy
 import com.aristurtle.job_service.service.VacancyService
@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/vacancies")
+@RequestMapping("/api/v1/vacancies")
 @Tag(name = "Vacancies", description = "API для управления вакансиями")
 class VacancyController(
     private val vacancyService: VacancyService,
@@ -89,12 +89,12 @@ class VacancyController(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Данные вакансии",
             required = true,
-            content = [Content(schema = Schema(implementation = VacancyRequest::class))]
+            content = [Content(schema = Schema(implementation = VacancyDto::class))]
         )
-        @RequestBody vacancyRequest: VacancyRequest
+        @RequestBody vacancyDto: VacancyDto
     ): ResponseEntity<Vacancy> {
         val createdVacancy = vacancyService.createVacancy(
-            modelMapper.map(vacancyRequest, Vacancy::class.java)
+            modelMapper.map(vacancyDto, Vacancy::class.java)
         )
         return ResponseEntity.status(HttpStatus.CREATED).body(createdVacancy)
     }
@@ -117,14 +117,14 @@ class VacancyController(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Обновленные данные вакансии",
             required = true,
-            content = [Content(schema = Schema(implementation = VacancyRequest::class))]
+            content = [Content(schema = Schema(implementation = VacancyDto::class))]
         )
-        @RequestBody vacancyRequest: VacancyRequest
+        @RequestBody vacancyDto: VacancyDto
     ): ResponseEntity<Vacancy> {
         return try {
             val updatedVacancy = vacancyService.updateVacancy(
                 id = id,
-                vacancy = modelMapper.map(vacancyRequest, Vacancy::class.java)
+                vacancy = modelMapper.map(vacancyDto, Vacancy::class.java)
             )
             ResponseEntity.ok(updatedVacancy)
         } catch (e: NoSuchElementException) {

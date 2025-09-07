@@ -66,10 +66,10 @@ data class Vacancy(
     val experienceTo: Int? = null,
 
     @Column(name = "knowledge_languages", columnDefinition = "VARCHAR(50)[]")
-    val knowledgeLanguages: List<String> = emptyList(),
+    val knowledgeLanguages: List<String>? = emptyList(),
 
     @Column(name = "level_languages", columnDefinition = "VARCHAR(50)[]")
-    val levelLanguages: List<String> = emptyList(),
+    val levelLanguages: List<String>? = emptyList(),
 
     @Column(name = "business_trips")
     val businessTrips: Boolean? = null,
@@ -78,7 +78,7 @@ data class Vacancy(
     val additionalInfo: String? = null,
 
     @Column(name = "program_requirements", columnDefinition = "TEXT[]")
-    val programRequirements: List<String> = emptyList(),
+    val programRequirements: List<String>? = emptyList(),
 
     @Column(name = "creation_dts", nullable = false)
     val creationDts: OffsetDateTime = OffsetDateTime.now()

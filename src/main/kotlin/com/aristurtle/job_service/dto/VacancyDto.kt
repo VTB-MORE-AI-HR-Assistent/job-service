@@ -2,7 +2,7 @@ package com.aristurtle.job_service.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-data class VacancyRequest(
+data class VacancyDto(
     val status: String? = null,
     val region: String? = null,
     val city: String? = null,
