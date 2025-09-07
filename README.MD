@@ -131,7 +131,7 @@ data class VacancySearchCriteria(
 ### Model
 ```kotlin
 @Entity
-@Table(name = "vacancies", schema = "jobs")
+@Table(name = "vacancies")
 data class Vacancy(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -229,43 +229,13 @@ data class Vacancy(
 ./gradlew test jacocoTestReport
 ```
 
-## 🐳 Docker
-
-### Сборка образа
-
-```bash
-docker build -t job-service .
-```
-
-### Запуск контейнера
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/ai_hr_db \
-  -e SPRING_DATASOURCE_USERNAME=postgres \
-  -e SPRING_DATASOURCE_PASSWORD=1234 \
-  job-service
-```
-
-### Docker Compose
-
-Полный стек с PostgreSQL и pgAdmin:
-```bash
-docker-compose up -d
-```
-
 ## 📊 База данных
 
 ### Структура таблиц
-*Общее*
-```sql
-CREATE SCHEMA IF NOT EXISTS jobs;
-```
 
 *Vacancies*
 ```sql
-CREATE TABLE jobs.vacancies (
+CREATE TABLE vacancies (
     id SERIAL PRIMARY KEY,
     status VARCHAR(50),
     region VARCHAR(100),

@@ -5,7 +5,7 @@ import jakarta.persistence.*
 import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "vacancies", schema = "jobs")
+@Table(name = "vacancies")
 data class Vacancy(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
