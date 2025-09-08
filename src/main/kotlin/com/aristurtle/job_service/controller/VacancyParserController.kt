@@ -2,7 +2,6 @@ package com.aristurtle.job_service.controller
 
 import com.aristurtle.job_service.dto.UploadRequest
 import com.aristurtle.job_service.dto.VacancyDto
-import com.aristurtle.job_service.model.Vacancy
 import com.aristurtle.job_service.service.VacancyService
 import com.aristurtle.job_service.service.impl.VacancyParserService
 import io.swagger.v3.oas.annotations.Operation
@@ -31,9 +30,9 @@ class VacancyParserController(
         summary = "Создать задачу на загрузку",
         description = "Отправьте один или несколько файлов резюме в формате multipart/form-data.\n\n" +
                 "Части запроса:\n" +
-                "- files: массив бинарных файлов (обязательно)\n" +
+                "- file: файл формата multipart/form-data (обязательно)\n" +
                 "- jobId: целое число (необязательно)\n\n" +
-                "Поддерживаемые типы: application/pdf",
+                "Поддерживаемые типы: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document (DOCX), text/plain",
         requestBody = RequestBody(
             required = true,
             content = [
@@ -45,19 +44,21 @@ class VacancyParserController(
         )
     )
     @PostMapping("/upload")
-    fun parseVacancyFromPdf(@ModelAttribute request: UploadRequest): ResponseEntity<Vacancy> {
-        val vacancy = vacancyParserService.parseVacancyFromPdf(request.file)
+    fun parseVacancyFromFile(@ModelAttribute request: UploadRequest): ResponseEntity<Any> {
+        if (request.file.isEmpty)
+            return ResponseEntity.badRequest().body("File must not be empty")
+        val vacancy = vacancyParserService.parseVacancyFromFile(request.file)
         val savedVacancy = vacancyService.createVacancy(vacancy)
         return ResponseEntity.ok(savedVacancy)
     }
 
     @Operation(
-        summary = "Создать задачу на парсинг pdf вакансии",
-        description = "Отправьте один или несколько файлов резюме в формате multipart/form-data.\n\n" +
+        summary = "Парсинг файла вакансии",
+        description = "Отправьте файл вакансии в формате multipart/form-data.\n\n" +
                 "Части запроса:\n" +
                 "- files: массив бинарных файлов (обязательно)\n" +
                 "- jobId: целое число (необязательно)\n\n" +
-                "Поддерживаемые типы: application/pdf",
+                "Поддерживаемые типы: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document (DOCX), text/plain",
         requestBody = RequestBody(
             required = true,
             content = [
@@ -68,9 +69,11 @@ class VacancyParserController(
             ]
         )
     )
-    @PostMapping("/parse-pdf")
-    fun previewParsedVacancy(@ModelAttribute request: UploadRequest): ResponseEntity<VacancyDto> {
-        val vacancy = vacancyParserService.parseVacancyFromPdf(request.file)
+    @PostMapping("/parse-file")
+    fun previewParsedVacancy(@ModelAttribute request: UploadRequest): ResponseEntity<Any> {
+        if (request.file.isEmpty)
+            return ResponseEntity.badRequest().body("Files must not be empty")
+        val vacancy = vacancyParserService.parseVacancyFromFile(request.file)
         return ResponseEntity.ok(modelMapper.map(vacancy, VacancyDto::class.java))
     }
 }

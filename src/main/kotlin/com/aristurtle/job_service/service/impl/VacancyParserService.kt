@@ -1,15 +1,23 @@
 package com.aristurtle.job_service.service.impl
 
+import com.aristurtle.job_service.exception.AiParsingFailException
+import com.aristurtle.job_service.exception.FileParsingFailException
+import com.aristurtle.job_service.exception.UnsupportedFileTypeException
 import com.aristurtle.job_service.model.Vacancy
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.slf4j.LoggerFactory
 import org.springframework.ai.document.Document
 import org.springframework.ai.openai.OpenAiChatModel
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig
+import org.springframework.ai.reader.tika.TikaDocumentReader
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+
+private const val FILE_CONTENT_CHAR_LIMIT_AMOUNT = 12000
 
 @Service
 class VacancyParserService(
@@ -17,14 +25,38 @@ class VacancyParserService(
 ) {
 
     private val logger = LoggerFactory.getLogger(VacancyParserService::class.java)
+    private val supportedMimeTypes = setOf(
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
+        "text/plain",
+        "application/msword" // DOC (старый формат)
+    )
 
-    fun parseVacancyFromPdf(pdfFile: MultipartFile): Vacancy {
-        logger.info("Parsing PDF file: ${pdfFile.originalFilename}, size: ${pdfFile.size}")
+    fun parseVacancyFromFile(file: MultipartFile): Vacancy {
+        logger.info("Parsing file: ${file.originalFilename}, type: ${file.contentType}, size: ${file.size}")
 
-        // Читаем PDF напрямую из MultipartFile
-        val pdfBytes = pdfFile.bytes
+        if (!isSupportedFileType(file))
+            throw UnsupportedFileTypeException("Unsupported file type: ${file.contentType}. Supported types: $supportedMimeTypes")
 
-        // Используем ByteArrayResource
+        val fileText = when (file.contentType) {
+            "application/pdf" -> extractTextFromPdf(file)
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> extractTextFromDocx(file)
+            "application/msword" -> extractTextFromDoc(file) // Для старых .doc
+            else -> extractTextWithTika(file) // Для текстовых файлов и других форматов
+        }
+
+        logger.info("Extracted text length: ${fileText.length}")
+        logger.debug("Extracted text: $fileText")
+
+        return parseWithOpenAI(fileText)
+    }
+
+    private fun isSupportedFileType(file: MultipartFile): Boolean {
+        return supportedMimeTypes.contains(file.contentType?.lowercase())
+    }
+
+    private fun extractTextFromPdf(file: MultipartFile): String {
+        val pdfBytes = file.bytes
         val pdfResource = ByteArrayResource(pdfBytes)
 
         val pdfReader = PagePdfDocumentReader(
@@ -33,26 +65,64 @@ class VacancyParserService(
         )
 
         val documents = pdfReader.get()
-        val pdfText = extractTextFromDocuments(documents)
+        return extractTextFromDocuments(documents)
+    }
 
-        logger.info("Extracted text length: ${pdfText.length}")
+    private fun extractTextFromDocx(file: MultipartFile): String {
+        return try {
+            val document = XWPFDocument(ByteArrayInputStream(file.bytes))
+            val text = StringBuilder()
 
-        // Парсим с помощью OpenAI
-        return parseWithOpenAI(pdfText)
+            // Читаем параграфы
+            document.paragraphs.forEach { paragraph ->
+                text.append(paragraph.text).append("\n")
+            }
+
+            // Читаем таблицы
+            document.tables.forEach { table ->
+                table.rows.forEach { row ->
+                    row.tableCells.forEach { cell ->
+                        text.append(cell.text).append("\t")
+                    }
+                    text.append("\n")
+                }
+            }
+
+            document.close()
+            text.toString()
+        } catch (e: Exception) {
+            logger.error("Error reading DOCX file", e)
+            throw FileParsingFailException("Failed to read DOCX file: ${e.message}")
+        }
+    }
+
+    private fun extractTextFromDoc(file: MultipartFile): String {
+        // Для старых .doc файлов используем Tika
+        return extractTextWithTika(file)
+    }
+
+    private fun extractTextWithTika(file: MultipartFile): String {
+        return try {
+            val tikaReader = TikaDocumentReader(ByteArrayResource(file.bytes))
+            val documents = tikaReader.get()
+            extractTextFromDocuments(documents)
+        } catch (e: Exception) {
+            logger.error("Error extracting text with Tika", e)
+            throw FileParsingFailException("Failed to extract text from file: ${e.message}")
+        }
     }
 
     private fun extractTextFromDocuments(documents: List<Document>): String {
         return documents.joinToString("\n") { document ->
-            // В новых версиях Spring AI используется getContent() вместо content
-            document.text as CharSequence // или document.text в некоторых версиях
+            document.text as CharSequence
         }
     }
 
-    private fun parseWithOpenAI(pdfText: String): Vacancy {
+    private fun parseWithOpenAI(text: String): Vacancy {
         val prompt = """
             Проанализируй текст вакансии и извлеки информацию в формате JSON.
             Текст вакансии:
-            ${pdfText.take(8000)} <!-- Ограничиваем размер для токенов -->
+            ${text.take(FILE_CONTENT_CHAR_LIMIT_AMOUNT)}
             
             Верни ТОЛЬКО JSON объект со следующей структурой:
             {
@@ -110,7 +180,7 @@ class VacancyParserService(
             objectMapper.readValue(cleanJson, Vacancy::class.java)
         } catch (e: Exception) {
             logger.error("Error parsing JSON response: $jsonResponse", e)
-            throw RuntimeException("Failed to parse OpenAI response: ${e.message}")
+            throw AiParsingFailException("Failed to parse OpenAI response: ${e.message}")
         }
     }
 }

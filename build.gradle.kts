@@ -26,9 +26,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    // Spring AI PDF
+    // Spring AI file parsing
     implementation("org.springframework.ai:spring-ai-pdf-document-reader")
 	implementation("org.springframework.ai:spring-ai-starter-model-openai")
+    // Для DOCX
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+    // Для различных форматов через Tika
+    implementation("org.springframework.ai:spring-ai-tika-document-reader")
+    implementation("org.apache.tika:tika-core:2.7.0")
     // Для Spring Boot 6.2.10 используйте SpringDoc 2.2.0
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
     runtimeOnly("org.postgresql:postgresql")
