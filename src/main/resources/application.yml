@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://user-db:5432/aihr
-    username: postgres
-    password: postgres
+    url: ${PG_URL:jdbc:postgresql://user-db:5432/aihr}
+    username: ${PG_USERNAME:postgres}
+    password: ${PG_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -30,11 +30,11 @@ spring:
 
   ai:
     openai:
-      api-key: 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
+      api-key: ${OPENAI_API_KEY}
       chat:
         options:
-          model: gpt-4-turbo-preview
-          temperature: 0.1
+          model: ${OPENAI_MODEL:gpt-4o-mini}
+          temperature: ${OPENAI_TEMPERATURE:0.1}
 
 springdoc:
   swagger-ui:
@@ -44,7 +44,7 @@ springdoc:
     display-request-duration: true
 
 server:
-  port: 8585
+  port: ${JOB_SERVICE_PORT:8084}
 
 logging:
   level:
