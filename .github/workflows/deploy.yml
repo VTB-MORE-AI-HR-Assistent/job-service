@@ -112,6 +112,9 @@ jobs:
             echo "Checking environment variables..."
             echo "PG_USERNAME length: ${{secrets.PG_USERNAME}}"
             echo "PG_PASSWORD length: ${{secrets.PG_PASSWORD}}"
+            echo "OPENAI_API_KEY length: $(echo '${{ secrets.OPENAI_API_KEY }}' | wc -c)"
+            echo "OPENAI_API_KEY first 10 chars: $(echo '${{ secrets.OPENAI_API_KEY }}' | cut -c1-10)"
+            echo "OPENAI_API_KEY full value: ${{ secrets.OPENAI_API_KEY }}"
 
             # Run new container with custom DNS settings
             docker run -d \
