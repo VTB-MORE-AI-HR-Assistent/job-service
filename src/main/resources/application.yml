@@ -30,7 +30,7 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY: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}
       chat:
         options:
           model: ${OPENAI_MODEL:gpt-4o-mini}
