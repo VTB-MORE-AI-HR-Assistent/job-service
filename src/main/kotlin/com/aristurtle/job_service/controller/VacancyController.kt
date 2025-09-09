@@ -60,7 +60,7 @@ class VacancyController(
             ApiResponse(responseCode = "404", description = "Вакансия не найдена")
         ]
     )
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     fun getVacancyById(
         @Parameter(description = "ID вакансии", required = true, example = "1")
         @PathVariable id: Long
@@ -109,7 +109,7 @@ class VacancyController(
             ApiResponse(responseCode = "404", description = "Вакансия не найдена")
         ]
     )
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9]+}")
     fun updateVacancy(
         @Parameter(description = "ID вакансии", required = true, example = "1")
         @PathVariable id: Long,
@@ -142,7 +142,7 @@ class VacancyController(
             ApiResponse(responseCode = "404", description = "Вакансия не найдена")
         ]
     )
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9]+}")
     fun deleteVacancy(
         @Parameter(description = "ID вакансии", required = true, example = "1")
         @PathVariable id: Long
@@ -180,5 +180,117 @@ class VacancyController(
             else
                 vacancyService.searchVacancies(vacancySearchCriteria)
         return ResponseEntity.ok(vacancies)
+    }
+
+    @Operation(
+        summary = "Получить кандидатов по вакансии",
+        description = "Возвращает список кандидатов для указанной вакансии"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Список кандидатов получен"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @GetMapping("/{id:[0-9]+}/candidates")
+    fun getVacancyCandidates(
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long
+    ): ResponseEntity<List<Map<String, Any>>> {
+        return if (vacancyService.getVacancyById(id).isPresent) {
+            // TODO: Интегрировать с candidate-service для получения реальных кандидатов
+            val mockCandidates = listOf(
+                mapOf(
+                    "id" to 1,
+                    "firstName" to "Иван",
+                    "lastName" to "Иванов", 
+                    "email" to "ivan@example.com",
+                    "phone" to "+7900123456",
+                    "status" to "ACTIVE",
+                    "appliedAt" to "2025-01-01T10:00:00Z"
+                ),
+                mapOf(
+                    "id" to 2,
+                    "firstName" to "Петр",
+                    "lastName" to "Петров",
+                    "email" to "petr@example.com", 
+                    "phone" to "+7900654321",
+                    "status" to "INTERVIEWING",
+                    "appliedAt" to "2025-01-02T14:30:00Z"
+                )
+            )
+            ResponseEntity.ok(mockCandidates)
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @Operation(
+        summary = "Архивировать вакансию",
+        description = "Переводит вакансию в архивный статус"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Вакансия заархивирована"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @PostMapping("/{id:[0-9]+}/archive")
+    fun archiveVacancy(
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long
+    ): ResponseEntity<Vacancy> {
+        return try {
+            val archivedVacancy = vacancyService.updateVacancyStatus(id, "ARCHIVED")
+            ResponseEntity.ok(archivedVacancy)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @Operation(
+        summary = "Опубликовать вакансию",
+        description = "Переводит вакансию в опубликованный статус"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Вакансия опубликована"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @PostMapping("/{id:[0-9]+}/publish")
+    fun publishVacancy(
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long
+    ): ResponseEntity<Vacancy> {
+        return try {
+            val publishedVacancy = vacancyService.updateVacancyStatus(id, "PUBLISHED")
+            ResponseEntity.ok(publishedVacancy)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @Operation(
+        summary = "Приостановить вакансию",
+        description = "Переводит вакансию в приостановленный статус"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Вакансия приостановлена"),
+            ApiResponse(responseCode = "404", description = "Вакансия не найдена")
+        ]
+    )
+    @PostMapping("/{id:[0-9]+}/pause")
+    fun pauseVacancy(
+        @Parameter(description = "ID вакансии", required = true, example = "1")
+        @PathVariable id: Long
+    ): ResponseEntity<Vacancy> {
+        return try {
+            val pausedVacancy = vacancyService.updateVacancyStatus(id, "PAUSED")
+            ResponseEntity.ok(pausedVacancy)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.notFound().build()
+        }
     }
 }

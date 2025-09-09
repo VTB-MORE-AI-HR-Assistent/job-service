@@ -106,4 +106,35 @@ class VacancyServiceImpl(
             if (vacancySearchCriteria.programRequirements.isNotEmpty()) VacancySpecifications.hasAnyProgramRequirement(vacancySearchCriteria.programRequirements) else null
         )
     }
+
+    override fun getVacancyStats(): Map<String, Any> {
+        val allVacancies = vacancyRepository.findAll()
+        val totalCount = allVacancies.size
+        val activeCount = allVacancies.count { it.status == "ACTIVE" }
+        val publishedCount = allVacancies.count { it.status == "PUBLISHED" }
+        val draftCount = allVacancies.count { it.status == "DRAFT" }
+        val closedCount = allVacancies.count { it.status == "CLOSED" }
+
+        return mapOf(
+            "total" to totalCount,
+            "active" to activeCount,
+            "published" to publishedCount,
+            "draft" to draftCount,
+            "closed" to closedCount,
+            "byStatus" to mapOf(
+                "ACTIVE" to activeCount,
+                "PUBLISHED" to publishedCount,
+                "DRAFT" to draftCount,
+                "CLOSED" to closedCount
+            )
+        )
+    }
+
+    override fun updateVacancyStatus(id: Long, status: String): Vacancy {
+        val existingVacancy = vacancyRepository.findById(id)
+            .orElseThrow { NoSuchElementException("Vacancy with id $id not found") }
+
+        val updatedVacancy = existingVacancy.copy(status = status)
+        return vacancyRepository.save(updatedVacancy)
+    }
 }

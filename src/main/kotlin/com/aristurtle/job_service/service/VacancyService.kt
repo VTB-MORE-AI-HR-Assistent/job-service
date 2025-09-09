@@ -15,4 +15,6 @@ interface VacancyService {
     fun deleteVacancy(id: Long): Boolean
     fun searchVacancies(vacancySearchCriteria: VacancySearchCriteria): List<Vacancy>
     fun searchVacancies(vacancySearchCriteria: VacancySearchCriteria, pageable: Pageable): List<Vacancy>
+    fun getVacancyStats(): Map<String, Any>
+    fun updateVacancyStatus(id: Long, status: String): Vacancy
 }
