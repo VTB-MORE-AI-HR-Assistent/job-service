@@ -2,7 +2,7 @@ name: Deploy job Service
 
 on:
   push:
-    branches: [main, master, deploy-test, dev-last]
+    branches: [main, master, deploy-test, dev-last, deploy-prod]
     paths:
       - "**"
       - ".github/workflows/deploy.yml"
@@ -93,26 +93,26 @@ jobs:
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             cd ${{ secrets.SERVER_PATH }}
-          
+
             # Load Docker image
             docker load < ${{ env.SERVICE_NAME }}.tar.gz
             rm ${{ env.SERVICE_NAME }}.tar.gz
-          
+
             # Stop and remove old container if exists
             docker stop ${{ env.SERVICE_NAME }} 2>/dev/null || true
             docker rm ${{ env.SERVICE_NAME }} 2>/dev/null || true
-          
+
             # Create Docker network with custom subnet and DNS if not exists
             docker network create --driver bridge --subnet=172.20.0.0/16 --ip-range=172.20.240.0/20 app-network 2>/dev/null || true
-          
+
             # Connect postgres to app-network if not already connected
             docker network connect app-network postgres 2>/dev/null || true
-          
+
             # Debug environment variables
             echo "Checking environment variables..."
             echo "PG_USERNAME length: ${{secrets.PG_USERNAME}}"
             echo "PG_PASSWORD length: ${{secrets.PG_PASSWORD}}"
-          
+
             # Run new container with custom DNS settings
             docker run -d \
               --name ${{ env.SERVICE_NAME }} \
@@ -126,13 +126,13 @@ jobs:
               -e PG_PASSWORD="${{ secrets.PG_PASSWORD }}" \
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               ${{ env.SERVICE_NAME }}:${{ env.IMAGE_TAG }}
-          
+
             # Clean up old images
             docker image prune -f
-          
+
             # Check if container is running
             sleep 5
             docker ps | grep ${{ env.SERVICE_NAME }}
-          
+
             echo "Deployment completed successfully!"
           ENDSSH
